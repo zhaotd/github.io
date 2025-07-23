@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打砖块</title>
+    <!-- 引入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google AdSense 自动广告代码 (放置在 <head> 标签内) -->
+    <!-- 您需要将 'YOUR_ADSENSE_PUBLISHER_ID' 替换为您的实际 AdSense 发布商 ID -->
+    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_ADSENSE_PUBLISHER_ID" crossorigin="anonymous"></script> -->
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #1a202c; /* 深色背景 */
+            color: #e2e8f0; /* 浅色文字 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        canvas {
+            background-color: #2d3748; /* 画布背景色 */
+            border: 4px solid #4a5568; /* 画布边框 */
+            border-radius: 12px; /* 圆角 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* 阴影 */
+            touch-action: none; /* 防止触摸滑动导致页面滚动 */
+        }
+
+        .game-button {
+            padding: 12px 24px;
+            margin: 8px;
+            font-size: 1.125rem; /* 字体大小 */
+            font-weight: 700; /* 粗体 */
+            border: none;
+            border-radius: 9999px; /* 圆角胶囊按钮 */
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            background-image: linear-gradient(to right, var(--tw-gradient-stops));
+            --tw-gradient-from: #6ee7b7; /* 绿色渐变 */
+            --tw-gradient-to: #34d399;
+            color: #1a202c; /* 深色文字 */
+            text-decoration: none;
+        }
+
+        .game-button:hover {
+            transform: translateY(-2px); /* 悬停上浮效果 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .game-button:active {
+            transform: translateY(0); /* 点击下沉效果 */
+            box-shadow: none;
+        }
+
+        /* 暂停按钮特定样式 */
+        #pauseButton {
+            --tw-gradient-from: #93c5fd; /* 蓝色渐变 */
+            --tw-gradient-to: #60a5fa;
+        }
+
+        /* 返回主页按钮特定样式 */
+        #backButton {
+            --tw-gradient-from: #fcd34d; /* 黄色渐变 */
+            --tw-gradient-to: #fbbf24;
+        }
+
+        /* 游戏结束/胜利弹窗 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #2d3748;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .modal-content h2 {
+            font-size: 2.25rem; /* 字体大小 */
+            font-weight: 800; /* 超粗体 */
+            color: #fbd38d; /* 橙色 */
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            font-size: 1.5rem; /* 字体大小 */
+            color: #cbd5e0;
+            margin-bottom: 25px;
+        }
+
+        /* 广告容器样式 */
+        .ad-container {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 728px; /* 常见广告尺寸，可调整 */
+            min-height: 90px; /* 常见广告尺寸，可调整 */
+            background-color: #2d3748; /* 广告背景色 */
+            border: 1px dashed #4a5568; /* 虚线边框，表示广告位 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #cbd5e0;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col items-center justify-center min-h-screen p-5">
+    <h1 class="text-5xl font-extrabold mb-8 text-yellow-300 drop-shadow-lg">打砖块</h1>
+
+    <!-- 广告位示例：放置在游戏上方 -->
+    <!-- <div class="ad-container">
+        <p>广告位：顶部横幅广告</p>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-YOUR_ADSENSE_PUBLISHER_ID"
+             data-ad-slot="YOUR_AD_SLOT_ID"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div> -->
+
+    <canvas id="gameCanvas" width="480" height="320" class="mb-8"></canvas>
+
+    <div class="flex flex-col items-center mb-8">
+        <p class="text-3xl font-bold mb-4">分数: <span id="score" class="text-green-400">0</span></p>
+        <div class="flex space-x-4">
+            <button id="startButton" class="game-button">开始游戏</button>
+            <button id="pauseButton" class="game-button">暂停</button>
+            <a href="index.html" id="backButton" class="game-button">返回主页</a>
+        </div>
+    </div>
+
+    <!-- 广告位示例：放置在游戏下方 -->
+    <div class="ad-container">
+        <p>广告位：底部横幅广告</p>
+        <!-- 例如，一个响应式展示广告单元 -->
+        <!-- <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-YOUR_ADSENSE_PUBLISHER_ID"
+             data-ad-slot="YOUR_AD_SLOT_ID"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script> -->
+    </div>
+
+    <!-- 游戏结束/胜利弹窗 -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle" class="text-yellow-300">游戏结束！</h2>
+            <p>你的分数是: <span id="finalScore" class="text-green-400 font-bold">0</span></p>
+            <button id="restartButton" class="game-button">重新开始</button>
+            <!-- 广告位示例：放置在游戏结束弹窗内 -->
+            <!-- <div class="ad-container" style="width: 100%; min-height: 50px; border: none; background-color: transparent;">
+                <p>广告位：弹窗内广告</p>
+                <ins class="adsbygoogle"
+                     style="display:inline-block;width:320px;height:50px"
+                     data-ad-client="ca-pub-YOUR_ADSENSE_PUBLISHER_ID"
+                     data-ad-slot="YOUR_AD_SLOT_ID"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div> -->
+        </div>
+    </div>
+
+    <script>
+        // 获取 HTML 元素
+        const gameCanvas = document.getElementById('gameCanvas');
+        const ctx = gameCanvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const gameModal = document.getElementById('gameModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const restartButton = document.getElementById('restartButton');
+
+        // 游戏常量
+        const canvasWidth = gameCanvas.width;
+        const canvasHeight = gameCanvas.height;
+        const paddleHeight = 10;
+        const paddleWidth = 75;
+        const brickRowCount = 5;
+        const brickColumnCount = 8;
+        const brickWidth = 50;
+        const brickHeight = 20;
+        const brickPadding = 10;
+        const brickOffsetTop = 30;
+        const brickOffsetLeft = 30;
+
+        // 游戏变量
+        let paddleX = (canvasWidth - paddleWidth) / 2; // 挡板初始位置
+        let ballRadius = 10;
+        let x = canvasWidth / 2; // 球的初始X坐标
+        let y = canvasHeight - 30; // 球的初始Y坐标
+        let dx = 2; // 球的X方向速度
+        let dy = -2; // 球的Y方向速度
+        let score = 0;
+        let lives = 3; // 玩家生命
+        let gameIntervalId;
+        let isPaused = true;
+        let rightPressed = false; // 右键是否按下
+        let leftPressed = false; // 左键是否按下
+
+        // 砖块数组
+        const bricks = [];
+        for (let c = 0; c < brickColumnCount; c++) {
+            bricks[c] = [];
+            for (let r = 0; r < brickRowCount; r++) {
+                bricks[c][r] = { x: 0, y: 0, status: 1 }; // status 1 表示存在，0 表示被击碎
+            }
+        }
+
+        /**
+         * @function drawBall
+         * @description 绘制小球。
+         */
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#93c5fd"; // 蓝色小球
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        /**
+         * @function drawPaddle
+         * @description 绘制挡板。
+         */
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, canvasHeight - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#6ee7b7"; // 绿色挡板
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        /**
+         * @function drawBricks
+         * @description 绘制所有砖块。
+         */
+        function drawBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) {
+                        const brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+                        const brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                        ctx.fillStyle = "#fbd38d"; // 橙色砖块
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        /**
+         * @function collisionDetection
+         * @description 检测小球与砖块的碰撞。
+         */
+        function collisionDetection() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    const b = bricks[c][r];
+                    if (b.status === 1) {
+                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy; // 反弹
+                            b.status = 0; // 击碎砖块
+                            score++; // 增加分数
+                            scoreDisplay.textContent = score;
+                            if (score === brickRowCount * brickColumnCount) {
+                                gameWin(); // 所有砖块被击碎，游戏胜利
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * @function draw
+         * @description 绘制游戏画布上的所有元素。
+         */
+        function draw() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight); // 清空画布
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            collisionDetection();
+
+            // 移动小球
+            x += dx;
+            y += dy;
+
+            // 小球与墙壁碰撞检测
+            if (x + dx > canvasWidth - ballRadius || x + dx < ballRadius) {
+                dx = -dx; // 左右墙壁反弹
+            }
+            if (y + dy < ballRadius) {
+                dy = -dy; // 顶部墙壁反弹
+            } else if (y + dy > canvasHeight - ballRadius) {
+                // 小球与挡板碰撞检测
+                if (x > paddleX && x < paddleX + paddleWidth) {
+                    dy = -dy; // 挡板反弹
+                } else {
+                    // 游戏失败
+                    lives--;
+                    if (!lives) {
+                        gameOver();
+                    } else {
+                        // 重置球和挡板位置
+                        x = canvasWidth / 2;
+                        y = canvasHeight - 30;
+                        dx = 2;
+                        dy = -2;
+                        paddleX = (canvasWidth - paddleWidth) / 2;
+                    }
+                }
+            }
+
+            // 移动挡板
+            if (rightPressed && paddleX < canvasWidth - paddleWidth) {
+                paddleX += 7;
+            } else if (leftPressed && paddleX > 0) {
+                paddleX -= 7;
+            }
+        }
+
+        /**
+         * @function keyDownHandler
+         * @description 键盘按下事件处理。
+         * @param {Event} e - 键盘事件对象。
+         */
+        function keyDownHandler(e) {
+            if (e.key === "Right" || e.key === "ArrowRight") {
+                rightPressed = true;
+            } else if (e.key === "Left" || e.key === "ArrowLeft") {
+                leftPressed = true;
+            }
+        }
+
+        /**
+         * @function keyUpHandler
+         * @description 键盘抬起事件处理。
+         * @param {Event} e - 键盘事件对象。
+         */
+        function keyUpHandler(e) {
+            if (e.key === "Right" || e.key === "ArrowRight") {
+                rightPressed = false;
+            } else if (e.key === "Left" || e.key === "ArrowLeft") {
+                leftPressed = false;
+            }
+        }
+
+        /**
+         * @function mouseMoveHandler
+         * @description 鼠标移动事件处理，控制挡板。
+         * @param {Event} e - 鼠标事件对象。
+         */
+        function mouseMoveHandler(e) {
+            const relativeX = e.clientX - gameCanvas.offsetLeft;
+            if (relativeX > 0 && relativeX < canvasWidth) {
+                paddleX = relativeX - paddleWidth / 2;
+                if (paddleX < 0) {
+                    paddleX = 0;
+                }
+                if (paddleX + paddleWidth > canvasWidth) {
+                    paddleX = canvasWidth - paddleWidth;
+                }
+            }
+        }
+
+        /**
+         * @function touchMoveHandler
+         * @description 触摸移动事件处理，控制挡板。
+         * @param {Event} e - 触摸事件对象。
+         */
+        function touchMoveHandler(e) {
+            if (e.touches.length > 0) {
+                const touchX = e.touches[0].clientX - gameCanvas.offsetLeft;
+                if (touchX > 0 && touchX < canvasWidth) {
+                    paddleX = touchX - paddleWidth / 2;
+                    if (paddleX < 0) {
+                        paddleX = 0;
+                    }
+                    if (paddleX + paddleWidth > canvasWidth) {
+                        paddleX = canvasWidth - paddleWidth;
+                    }
+                }
+            }
+        }
+
+        /**
+         * @function gameOver
+         * @description 处理游戏结束逻辑。
+         */
+        function gameOver() {
+            clearInterval(gameIntervalId);
+            isPaused = true;
+            startButton.textContent = '重新开始';
+            pauseButton.textContent = '暂停';
+            pauseButton.disabled = true;
+            modalTitle.textContent = '游戏结束！';
+            finalScoreDisplay.textContent = score;
+            gameModal.classList.add('show');
+        }
+
+        /**
+         * @function gameWin
+         * @description 处理游戏胜利逻辑。
+         */
+        function gameWin() {
+            clearInterval(gameIntervalId);
+            isPaused = true;
+            startButton.textContent = '重新开始';
+            pauseButton.textContent = '暂停';
+            pauseButton.disabled = true;
+            modalTitle.textContent = '恭喜你，胜利了！';
+            finalScoreDisplay.textContent = score;
+            gameModal.classList.add('show');
+        }
+
+        /**
+         * @function startGame
+         * @description 初始化并开始游戏。
+         */
+        function startGame() {
+            // 重置游戏状态
+            x = canvasWidth / 2;
+            y = canvasHeight - 30;
+            dx = 2;
+            dy = -2;
+            paddleX = (canvasWidth - paddleWidth) / 2;
+            score = 0;
+            lives = 3;
+            scoreDisplay.textContent = score;
+            isPaused = false;
+            startButton.textContent = '重新开始';
+            pauseButton.textContent = '暂停';
+            pauseButton.disabled = false;
+            gameModal.classList.remove('show');
+
+            // 重置砖块状态
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    bricks[c][r].status = 1;
+                }
+            }
+
+            draw(); // 初始绘制
+
+            if (gameIntervalId) {
+                clearInterval(gameIntervalId);
+            }
+            gameIntervalId = setInterval(draw, 10); // 游戏循环速度
+        }
+
+        /**
+         * @function togglePause
+         * @description 切换游戏的暂停/继续状态。
+         */
+        function togglePause() {
+            if (gameModal.classList.contains('show')) {
+                return;
+            }
+            isPaused = !isPaused;
+            pauseButton.textContent = isPaused ? '继续' : '暂停';
+            if (!isPaused) {
+                clearInterval(gameIntervalId);
+                gameIntervalId = setInterval(draw, 10);
+            } else {
+                clearInterval(gameIntervalId);
+            }
+        }
+
+        // --- 事件监听器 ---
+        document.addEventListener('keydown', keyDownHandler);
+        document.addEventListener('keyup', keyUpHandler);
+        document.addEventListener('mousemove', mouseMoveHandler);
+        gameCanvas.addEventListener('touchmove', touchMoveHandler, { passive: false }); // 触摸移动事件
+
+        startButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', togglePause);
+        restartButton.addEventListener('click', startGame);
+
+        // 初始绘制
+        draw();
+        pauseButton.disabled = true; // 游戏开始前禁用暂停按钮
+    </script>
+</body>
+</html>
