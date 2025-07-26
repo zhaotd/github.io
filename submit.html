@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提交网站 - 机械工程师导航站</title>
+    <!-- 引入主样式和新的提交页面专属样式 -->
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="submit.css"> 
+</head>
+<body>
+    <div class="submit-container">
+        <div class="form-wrapper">
+            <div class="form-header">
+                <a href="index.html" class="logo-link">
+                    <img src="images/WEBlogo.png" alt="Logo">
+                </a>
+                <h1>分享你的宝藏网站</h1>
+                <p>感谢您参与共建！我们将在审核后收录您的推荐。</p>
+            </div>
+            
+            <!-- 表单的 action 属性需要替换为您自己的 Formspree 地址 -->
+            <form id="submit-form" action="https://n8n-ofgvbhmc.ap-southeast-1.clawcloudrun.com/webhook/45d29edc-0029-4030-bab9-b37a5a8b8272" method="POST">
+                
+                <div class="form-group">
+                    <label for="site-name">网站名称</label>
+                    <input type="text" id="site-name" name="网站名称" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="site-url">网站地址 (URL)</label>
+                    <input type="url" id="site-url" name="网站地址" placeholder="www.example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="site-description">网站简介 (一句话推荐)</label>
+                    <textarea id="site-description" name="网站简介" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="site-category">推荐分类</label>
+                    <select id="site-category" name="推荐分类" required>
+                        <option value="" disabled selected>请选择一个分类</option>
+                        <option value="搜索引擎">搜索引擎</option>
+                        <option value="学习提升">学习提升</option>
+                        <option value="机械选型">机械选型</option>
+                        <option value="电气选型">电气选型</option>
+                        <option value="邮箱">邮箱</option>
+                        <option value="野生工具">野生工具</option>
+                        <option value="采购">采购</option>
+                        <option value="调研">调研</option>
+                        <option value="Ai工具">Ai 工具</option>
+                        <option value="其他分类">其他/未分类</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="user-contact">您的联系方式 (选填)</label>
+                    <input type="text" id="user-contact" name="联系方式" placeholder="邮箱或微信号，方便我们联系您">
+                </div>
+                
+                <div class="form-actions">
+                    <!-- ================= 关键修改 1: 给按钮添加一个ID ================= -->
+                    <button type="submit" id="submit-btn" class="submit-btn">提交审核</button>
+                    <a href="index.html" class="back-link">返回首页</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= 关键修改 2: 更新了下面的 JavaScript 逻辑 ================= -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // 1. 通过 ID 获取提交按钮和网址输入框
+            const submitButton = document.getElementById('submit-btn');
+            const urlInput = document.getElementById('site-url');
+
+            // 2. 监听提交按钮的 "click" (点击) 事件
+            submitButton.addEventListener('click', function() {
+                
+                // 3. 获取用户输入的网址值，并用 trim() 去掉前后的空格
+                let urlValue = urlInput.value.trim();
+                
+                // 4. 检查网址是否非空，并且不是以 http:// 或 https:// 开头
+                if (urlValue && !urlValue.startsWith('http://') && !urlValue.startsWith('https://')) {
+                    
+                    // 5. 如果条件满足，自动在前面加上 "https://"
+                    urlInput.value = 'https://' + urlValue;
+                    
+                    // 此时，输入框的值已经被成功修正。
+                    // 因为这是在表单提交动作发生前完成的，所以表单会带着正确的值提交。
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
